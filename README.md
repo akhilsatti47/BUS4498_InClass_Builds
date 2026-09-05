@@ -7,16 +7,15 @@
 
 ### System Designer Name
 
-[Enter your name.]
-
+[Akhil]
 
 ### System Name
 
-[Use a default name "HackTrack" or enter the name you choose for the system.]
+[HackTrack]
 
 ### System Goal
-[Read Chapter 2 Section 2.1, then enter the well-structured goal of your agentic system]
+[For student hackathon teams, increase the share of project milestones completed on time, measured by on-time milestone completion moving from a baseline established during the first sprint to at least 90%, without changing project scope, submitting work, or contacting external parties without explicit team approval.]
 
 ### Who Is Better Off When This Works?
 
-[In one complete sentence, identify who will be better off when the system works.]
+[Student hackathon teams will be better off because they can coordinate responsibilities, identify blockers earlier, and finish a viable prototype by the competition deadline.]
