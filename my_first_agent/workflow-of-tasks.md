@@ -23,8 +23,6 @@ If the information is complete, HackTrack analyzes milestone health and classifi
 
 [Insert a flowchart showing the tasks in sequence. Label each task with a task number and short name. Show decision branches, loops, review points, and possible stopping conditions. Below is an example of a Mermaid. You can either edit the mermaid below yourself or ask ChatGPT to generate a Mermaid script based on your workflow description above. Give every task a unique ID, such as T1, T2, and T3, and name tasks using a verb and an object in the mermaid.]
 
-```mermaid
-```mermaid
 flowchart TD
     S((Start: project update received or scheduled review))
     T1[T1: Receive project update]
@@ -45,28 +43,11 @@ flowchart TD
     E2((End: outcome recorded))
     E3((End: human review required))
 
-    S --> T1
-    T1 --> T2
-    T2 --> T3
-    T3 --> D1
-
-    D1 -- No --> T4
-    T4 --> T5
-    T5 --> E1
-
-    D1 -- Yes --> T6
-    T6 --> D2
-
+    S --> T1 --> T2 --> T3 --> D1
+    D1 -- No --> T4 --> T5 --> E1
+    D1 -- Yes --> T6 --> D2
     D2 -- On track --> T11
-    D2 -- At risk or blocked --> T7
-    T7 --> T8
-    T8 --> D3
-
+    D2 -- At risk or blocked --> T7 --> T8 --> D3
     D2 -- Requires judgment --> E3
     D3 -- No --> E3
-    D3 -- Yes --> T9
-    T9 --> T10
-    T10 --> T11
-    T11 --> E2
-```
-```
+    D3 -- Yes --> T9 --> T10 --> T11 --> E2
