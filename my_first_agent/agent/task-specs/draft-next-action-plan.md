@@ -1,14 +1,10 @@
-# [Exact task name] Task Specification
-
-*BUS 4498 Team Build Milestone 1. Create one copy for each L3 task. Save it in `our_team_agent/agent/task-specs/` in `BUS4498_Team_Build`. Use the task name in lowercase with hyphens between words; replace `&` with `and` and remove other punctuation.*
-
-*Keep the exact task ID and name from the workflow. Complete all six sections, including Tool Permissions and Boundaries. The reason for assigning L3 belongs only in the team worksheet. Replace prompts and remove template instructions before submitting. Tool scripts are not required.*
+# Draft next-action plan Task Specification
 
 ```yaml
 # BASIC INFORMATION
-task_id: "[Exact workflow task ID]"
-task_name: "[Exact workflow task name]"
-task_owner: "[Person or role accountable for this task]"
+task_id: "T7"
+task_name: "Draft next-action plan"
+task_owner: "HackTrack agent"
 
 # Agent Inference Configuration
 Provider: [e.g., Groq, OpenAI, Claude, Google Gemini]
@@ -20,21 +16,23 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 
 ## 1. Task Goal
 
-- **Objective:** [What business result should this task produce?]
+- **Objective:** Produce a prioritized, owner-assigned set of next actions that addresses the milestone’s most important blockers and supports completion by its deadline, without changing the approved project scope or taking unapproved external actions.
 
 ## 2. Inbound Inputs
 
-*Describe what the enclosing workflow must provide. Specify the structure of each input; do not invent customer, employee, or event data. Copy the Input block as needed.*
+T7 receives the milestone health assessment from T6 and the project context from T2 so it can create a prioritized next-action plan based on current blockers, dependencies, deadlines, task owners, and approved project scope.
 
 ### Input 1
 
-- **Input name:** [Short name.]
-- **What it contains:** [Information the agent receives, including required fields and format.]
-- **Source:** [Task ID and name, person, or other permitted source.]
+- Input name: Milestone health assessment
+- What it contains: The current milestone status, supporting evidence, identified blockers, risks, dependencies, and projected completion date.
+- Source: T6: Analyze milestone health
+
+- Input name: Project context
+- What it contains: Open tasks, task owners, deadlines, dependencies, approved project scope, and previous status records.
+- Source: T2: Retrieve project context
 
 ## 3. Tool Permissions and Boundaries
-
-*Name each planned tool and specify its permitted use. Use verb-object names, such as `retrieve_records`, usually matching the task or permitted subtask it supports. Tool name identifies the capability; tool type identifies the proposed implementation. No scripts or working integrations are required.*
 
 ### Task-Wide Limits
 
@@ -53,37 +51,45 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 - **Maximum retries per call:** [Nonnegative whole number of additional attempts after the first; 0 means no retries.]
 - **Retry conditions and failure response:** [When a retry is allowed, any waiting interval, and what happens on timeout or exhausted retries. For actions that change state, avoid duplicate actions and hand off if the outcome is uncertain.]
 
-*Copy the Tool block as needed. Tool-specific and task-wide limits both apply; stop at whichever is reached first. Naming a tool does not authorize uses outside its stated permissions.*
-
 ## 4. How the Agent Should Reason
-
-*Define permitted kinds of work rather than a fixed sequence. The agent selects its next subtask using intermediate findings and may skip, repeat, or combine permitted subtasks within Section 3's limits. Individual subtasks do not all have to be L3. Copy the Permitted Subtask block as needed.*
 
 ### Permitted Subtask 1
 
-- **Subtask name:** [Use a verb-object name.]
-- **Subtask description:** [What information does it examine and what finding or intermediate result does it produce?]
-- **Subtask boundary:** [What may and may not be done, including prerequisites and required approval?]
-- **Retry limits:** [Maximum additional attempts after the initial attempt; 0 means no retries. Repetition must also stay within Section 3's limits.]
+- Subtask name: Inspect blocker evidence
+- Subtask description: Examine the milestone health assessment, task statuses, blocker notes, deadlines, and dependencies to identify the most important supported blocker or uncertainty.
+- Subtask boundary: Use only the project context supplied by T2 and the assessment supplied by T6. The agent may interpret records but may not change tasks, deadlines, project scope, or contact anyone.
+- Retry limits: Attempt at most two additional times. If the evidence remains missing or contradictory, select another permitted subtask or hand the case to the hackathon team lead.
+
+### Permitted Subtask 2
+
+- Subtask name: Analyze dependency impact
+- Subtask description: Examine relationships among open tasks, owners, deadlines, and dependencies to determine which work is most likely to delay the milestone.
+- Subtask boundary: The agent may compare records and estimate schedule impact within the approved project scope. It may not alter dependencies, reassign work, or approve scope changes.
+- Retry limits: Attempt at most one additional time. If the dependency impact cannot be determined reliably, hand the case to the hackathon team lead.
+
+### Permitted Subtask 3
+
+- Subtask name: Propose next actions
+- Subtask description: Use the available findings to produce prioritized next actions with suggested owners, deadlines, dependencies, and the evidence supporting each recommendation.
+- Subtask boundary: The agent may draft recommendations within the approved project scope. It may not change scope, submit work, send external communications, or apply task-board changes without team approval.
+- Retry limits: Attempt at most two additional times. If the recommendations remain unsupported or would require an out-of-scope action, hand the case to the hackathon team lead.
 
 - **Decision guidance:** After each subtask, use its findings to select the permitted subtask most likely to resolve the most important remaining uncertainty. Do not follow a fixed sequence. If no permitted subtask can make useful progress, stop and hand the case to a person.
 
 ## 5. When to Stop or Hand Off to a Human
 
-- **Stop successfully when:** [What evidence shows that the required result is complete and acceptable? Confidence alone is not enough.]
-- **Hand off early when:** [What missing evidence, lack of progress, failure, or out-of-scope finding requires human review?]
-- **Hand off to:** [Specific person, role, or review queue.]
+- Stop successfully when the agent has produced a prioritized next-action plan with supported recommendations, suggested owners, deadlines, dependencies, and evidence showing that the plan remains within the approved project scope.
+- Hand off early when required project information is missing or contradictory, no useful next action can be identified within the permitted limits, the recommendation would change project scope, an external action is required, or the agent cannot support its recommendation with sufficient evidence.
+- Hand off to: Hackathon team lead.
 
 Stop at the first applicable budget limit or handoff condition. While awaiting review, take no further autonomous action.
 
 ## 6. Outbound Deliverable
 
-*Revise these default items if your task needs a more specific deliverable, or retain them if they fit.*
-
-- **Status:** Completed or escalated to human.
-- **Result or recommendation:** The completed result. If escalated before reaching a supported result, write undetermined.
-- **Evidence summary:** The most important evidence supporting the result or explaining why no result could be reached.
-- **Subtasks performed:** Permitted subtasks completed, including repeated attempts.
-- **Unresolved issues:** Remaining uncertainties or questions; use none only if no unresolved issue remains.
-- **Handoff note:** Reason for stopping, unresolved questions, and what the reviewer needs to decide; write "Not applicable" for a completed task.
-- **Next task or recipient:** Who receives the completed output? Unresolved cases go to the handoff recipient above.
+- Status: Completed or escalated to human.
+- Result or recommendation: A prioritized next-action plan listing recommended actions, suggested owners, deadlines, dependencies, and supporting rationale.
+- Evidence summary: The project records and milestone findings that support the recommended plan.
+- Subtasks performed: The permitted subtasks completed, including any repeated attempts.
+- Unresolved issues: Remaining uncertainties, missing information, or conflicting evidence.
+- Handoff note: The reason for escalation and the specific decision or information needed from the hackathon team lead; write “Not applicable” for a completed task.
+- Next task or recipient: T8: Obtain team approval. Unresolved cases go to the hackathon team lead.
