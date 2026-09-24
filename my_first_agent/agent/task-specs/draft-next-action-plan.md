@@ -4,14 +4,14 @@
 # BASIC INFORMATION
 task_id: "T7"
 task_name: "Draft next-action plan"
-task_owner: "HackTrack agent"
+task_owner: "Hackathon team lead"
 
 # Agent Inference Configuration
-Provider: [e.g., Groq, OpenAI, Claude, Google Gemini]
-Model: "[Exact supported API model ID.]"
-Role: [permitted subtasks the model supports]
-Maximum inference requests per task run: "[Whole-number limit.]"
-On inference failure or exhausted limits: Record the unresolved status and hand the case to [human role].
+Provider: Groq
+Model: "llama-3.3-70b-versatile"
+Role: Inspect blockers, analyze dependency impact, and propose next actions within approved project scope
+Maximum inference requests per task run: 6
+On inference failure or exhausted limits: Record the unresolved status and hand the case to the hackathon team lead.
 ```
 
 ## 1. Task Goal
@@ -28,6 +28,7 @@ T7 receives the milestone health assessment from T6 and the project context from
 - What it contains: The current milestone status, supporting evidence, identified blockers, risks, dependencies, and projected completion date.
 - Source: T6: Analyze milestone health
 
+### Input 2 
 - Input name: Project context
 - What it contains: Open tasks, task owners, deadlines, dependencies, approved project scope, and previous status records.
 - Source: T2: Retrieve project context
@@ -36,20 +37,24 @@ T7 receives the milestone health assessment from T6 and the project context from
 
 ### Task-Wide Limits
 
-- **Total task timeout:** [Maximum elapsed time for one task run, with units; include tool calls, retries, and waiting.]
-- **Maximum tool calls:** [Maximum total calls across all tools during one task run; retries count toward this total.]
+- **Total task timeout:** 10 minutes, including inference requests, tool calls, retries, and waiting.
+- **Maximum tool calls:** 6 total calls during one task run.
 
 ### Tool 1
 
-- **Tool name:** [Proposed verb-object name, used consistently throughout the project.]
-- **Tool type:** [For example: Python script, pretrained model, API request, database query, or language-model call.]
-- **Supports these permitted subtasks:** [Names from Section 4.]
-- **Allowed use:** [What the tool may read, create, change, or send; identify permitted data sources and destinations.]
-- **Prohibited use:** [Actions, data, or destinations outside this tool's authority.]
-- **Approval required:** [What requires approval, who provides it, and when. Write "None within the allowed use" if applicable.]
-- **Timeout per call:** [Maximum duration of a single attempt, with units.]
-- **Maximum retries per call:** [Nonnegative whole number of additional attempts after the first; 0 means no retries.]
-- **Retry conditions and failure response:** [When a retry is allowed, any waiting interval, and what happens on timeout or exhausted retries. For actions that change state, avoid duplicate actions and hand off if the outcome is uncertain.]
+- **Tool name:** `retrieve_project_records`
+- **Input:** Project context and milestone health assessment
+- **Output:** Current project evidence for next-action planning
+- **Implementation Route:** Database queries
+- **Integration approach:** Direct integration
+- **Role in this task:** Supports inspecting blocker evidence, analyzing dependency impact, and proposing next actions.
+- **Allowed use:** Read approved project-board, milestone, task, deadline, dependency, and status records already supplied by T2 and T6.
+- **Prohibited use:** Do not change tasks, reassign work, change project scope, submit work, send messages, or access unapproved records.
+- **Approval required:** None for read-only access; team-lead approval is required before any proposed changes are applied.
+- **Task timeout:** 10 minutes maximum for the task run.
+- **Maximum retries:** 1
+- **Retry only when:** A read-only query times out or returns a temporary system error. Wait 10 seconds before retrying. Do not retry solely because required information is missing.
+- **On timeout, exhausted retries, or an error that cannot be retried:** Record the unresolved status and hand the case to the hackathon team lead. Do not continue as if the tool succeeded.
 
 ## 4. How the Agent Should Reason
 
