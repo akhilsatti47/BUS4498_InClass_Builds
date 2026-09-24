@@ -16,7 +16,7 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 
 ## 1. Task Goal
 
-- **Objective:** Produce a prioritized, owner-assigned set of next actions that addresses the milestone’s most important blockers and supports completion by its deadline, without changing the approved project scope or taking unapproved external actions.
+- **Objective:** Produce a prioritized set of next actions with suggested owners that addresses the milestone’s most important blockers and supports completion by its deadline, without changing the approved project scope or taking unapproved external actions.
 
 ## 2. Inbound Inputs
 
@@ -58,7 +58,7 @@ T7 receives the milestone health assessment from T6 and the project context from
 - Subtask name: Inspect blocker evidence
 - Subtask description: Examine the milestone health assessment, task statuses, blocker notes, deadlines, and dependencies to identify the most important supported blocker or uncertainty.
 - Subtask boundary: Use only the project context supplied by T2 and the assessment supplied by T6. The agent may interpret records but may not change tasks, deadlines, project scope, or contact anyone.
-- Retry limits: Attempt at most two additional times. If the evidence remains missing or contradictory, select another permitted subtask or hand the case to the hackathon team lead.
+- Retry limits: Attempt at most two additional times when the available evidence is unclear or contradictory. If required information is absent, do not repeat this subtask solely to search for it; select another permitted subtask or hand the case to the hackathon team lead.
 
 ### Permitted Subtask 2
 
@@ -70,7 +70,7 @@ T7 receives the milestone health assessment from T6 and the project context from
 ### Permitted Subtask 3
 
 - Subtask name: Propose next actions
-- Subtask description: Use the available findings to produce prioritized next actions with suggested owners, deadlines, dependencies, and the evidence supporting each recommendation.
+- Subtask description: Use the available findings to produce a prioritized set of next actions with suggested owners, deadlines, dependencies, and supporting rationale. Rank actions by urgency, impact on the milestone deadline, ability to unblock dependent work, and fit within the approved project scope.
 - Subtask boundary: The agent may draft recommendations within the approved project scope. It may not change scope, submit work, send external communications, or apply task-board changes without team approval.
 - Retry limits: Attempt at most two additional times. If the recommendations remain unsupported or would require an out-of-scope action, hand the case to the hackathon team lead.
 
