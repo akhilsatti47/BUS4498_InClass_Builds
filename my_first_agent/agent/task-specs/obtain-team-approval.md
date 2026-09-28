@@ -40,18 +40,13 @@ This task requires a human team member to review the proposed next-action plan a
 
 ### Tool 1
 
-- **Tool name:** Present plan for approval
+- **Tool name:** Not applicable — manual task.
 - **Input:** Proposed next-action plan
 - **Output:** Approved next-action plan or plan revision feedback
-- **Implementation Route:** Human review supported by ordinary software
-- **Integration approach:** Direct integration
-- **Role in this task:** Present the plan to the designated hackathon team member and record the reviewer’s explicit approval or feedback. The software does not make the approval decision.
+- **Implementation Route:** Not applicable — manual task.
+- **Integration approach:** Not applicable — manual task.
+- **Role in this task:** A designated hackathon team member reviews the plan and records approval or feedback. The human makes the decision; software does not approve the plan.
 - **Task timeout:** Human response deadline of 1 business day after assignment.
 - **Maximum retries:** Not applicable — manual task.
 - **Retry only when:** Not applicable — manual task.
 - **On timeout, exhausted retries, or an error that cannot be retried:** Record that no approval was received and hand the case to the hackathon team lead or designated backup reviewer. A missed deadline is not approval.
-
-
-
-
-
