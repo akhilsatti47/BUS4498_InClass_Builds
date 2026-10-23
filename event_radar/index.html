@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbf7f2">
+  <meta name="description" content="A campus event board for club meetings, workshops, games, talks, and more.">
+  <title>Club Event Radar</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="config.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <p class="kicker">BUS 4498 · Campus clubs</p>
+      <h1>Club Event Radar</h1>
+      <p class="lede">Find your next campus event, or share an announcement with the clubs community.</p>
+      <ul class="badges" aria-label="About this event board">
+        <li>Club events</li>
+        <li>Free food filter</li>
+        <li>Reviewed when needed</li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="wrap layout">
+    <section class="card post" aria-labelledby="post-heading">
+      <p class="kicker">Share an event</p>
+      <h2 id="post-heading">Post an announcement</h2>
+      <p class="muted">Paste the club announcement. The event agent will turn it into a clear event card.</p>
+      <form id="event-form">
+        <label for="announcement">
+          Announcement
+          <span class="hint">Include the event date, start time, place, and club name. Up to 2,000 characters.</span>
+        </label>
+        <textarea id="announcement" name="announcement" required minlength="1" maxlength="2000" placeholder="Example: Board Game Guild: Game Night! Thursday, October 29, 7 to 10 pm in the University Union, Room 220. Free entry and free pizza while it lasts."></textarea>
+        <p class="hint" id="character-count" aria-live="polite">0 / 2,000 characters</p>
+        <button id="submit-button" type="submit">Send announcement</button>
+      </form>
+      <div class="result" id="post-result" role="status" aria-live="polite" hidden>
+        <p class="result-label" id="result-label"></p>
+        <p id="result-message"></p>
+        <ul class="reasons" id="result-reasons" hidden></ul>
+      </div>
+    </section>
+
+    <section class="board-section" aria-labelledby="board-heading">
+      <div class="board-head">
+        <div>
+          <p class="kicker">What's happening</p>
+          <h2 id="board-heading">Upcoming events</h2>
+        </div>
+        <button class="ghost" id="refresh-button" type="button">Refresh</button>
+      </div>
+      <div class="filters" role="group" aria-label="Filter events">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">All events</button>
+        <button class="chip" type="button" data-filter="food" aria-pressed="false">Free food</button>
+      </div>
+      <p class="hint" id="board-status" role="status" aria-live="polite">Loading events…</p>
+      <ul class="board" id="event-list" aria-label="Published events"></ul>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Club Event Radar · A BUS 4498 practice build. Check event details with the hosting club.</p>
+  </footer>
+</body>
+</html>
