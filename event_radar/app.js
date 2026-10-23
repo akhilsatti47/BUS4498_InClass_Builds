@@ -2,9 +2,10 @@
   "use strict";
 
   const config = window.EVENT_RADAR_CONFIG;
-  const eventColumns = "id,created_at,status,title,club,event_date,start_time,end_time,place_name,place_detail,cost,free_food,summary";
+  const eventColumns = "id,created_at,status,title,club,event_date,start_time,end_time,place_name,place_detail,cost,free_food,summary,flyer_url";
   const form = document.getElementById("event-form");
   const announcement = document.getElementById("announcement");
+  const flyerInput = document.getElementById("flyer");
   const characterCount = document.getElementById("character-count");
   const submitButton = document.getElementById("submit-button");
   const resultBox = document.getElementById("post-result");
@@ -92,6 +93,19 @@
     return time || "Date and time to be announced";
   }
 
+  function projectFlyerUrl(value) {
+    if (!value || !config || !config.supabaseUrl) return null;
+    try {
+      const projectUrl = new URL(config.supabaseUrl);
+      const flyerUrl = new URL(value, projectUrl);
+      const bucketPath = `${projectUrl.pathname.replace(/\/$/, "")}/storage/v1/object/public/flyers/`;
+      if (flyerUrl.origin !== projectUrl.origin || !flyerUrl.pathname.startsWith(bucketPath)) return null;
+      return flyerUrl.href;
+    } catch {
+      return null;
+    }
+  }
+
   function renderEvent(event) {
     const item = document.createElement("li");
     item.className = "event";
@@ -122,6 +136,16 @@
     if (event.cost) addText(tags, "span", "tag", event.cost);
     if (event.free_food) addText(tags, "span", "tag food", "🍕 Free food");
     if (tags.childElementCount) body.appendChild(tags);
+
+    const flyerUrl = projectFlyerUrl(event.flyer_url);
+    if (flyerUrl) {
+      const flyer = document.createElement("img");
+      flyer.className = "flyer";
+      flyer.src = flyerUrl;
+      flyer.alt = `Flyer for ${event.title || "this event"}`;
+      flyer.loading = "lazy";
+      item.appendChild(flyer);
+    }
 
     return item;
   }
@@ -191,6 +215,15 @@
       displayResult("error", "Enter an announcement between 1 and 2,000 characters.", []);
       return;
     }
+    const flyerFile = flyerInput.files && flyerInput.files[0];
+    if (flyerFile && flyerFile.size > 5 * 1024 * 1024) {
+      displayResult("error", "The flyer must be 5 MB or smaller.", []);
+      return;
+    }
+    if (flyerFile && flyerFile.type !== "image/jpeg" && flyerFile.type !== "image/png") {
+      displayResult("error", "The flyer must be a JPG or PNG image.", []);
+      return;
+    }
     if (!config || !config.supabaseUrl || !config.publishableKey) {
       displayResult("error", "The website connection is not configured yet.", []);
       return;
@@ -200,6 +233,7 @@
     submitButton.textContent = "Sending…";
     const formData = new FormData();
     formData.set("announcement", text);
+    if (flyerFile) formData.set("flyer", flyerFile, flyerFile.name);
     try {
       const response = await fetch(`${config.supabaseUrl}/functions/v1/submit-event`, {
         method: "POST",
