@@ -16,19 +16,32 @@
   const boardStatus = document.getElementById("board-status");
   const refreshButton = document.getElementById("refresh-button");
   const filterButtons = Array.from(document.querySelectorAll("[data-filter]"));
+  const moderatorLoginForm = document.getElementById("moderator-login-form");
+  const moderatorEmail = document.getElementById("moderator-email");
+  const moderatorPassword = document.getElementById("moderator-password");
+  const moderatorLoginButton = document.getElementById("moderator-login-button");
+  const moderatorStatus = document.getElementById("moderator-status");
+  const moderatorSession = document.getElementById("moderator-session");
+  const moderatorWelcome = document.getElementById("moderator-welcome");
+  const moderatorSignout = document.getElementById("moderator-signout");
+  const waitingList = document.getElementById("waiting-list");
+  const reviewColumns = "id,created_at,status,status_reason,announcement,title,club,event_date,start_time,end_time,place_name,place_detail,cost,free_food,summary,note_for_moderator,flyer_url";
 
   let supabaseClient = null;
   let events = [];
   let activeFilter = "all";
+  let moderatorUser = null;
 
   if (config && config.supabaseUrl && config.publishableKey && window.supabase) {
     supabaseClient = window.supabase.createClient(config.supabaseUrl, config.publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
+      auth: { persistSession: true, autoRefreshToken: true },
       global: {
         fetch: (input, init) => {
           const headers = new Headers(init && init.headers);
           headers.set("apikey", config.publishableKey);
-          headers.delete("Authorization");
+          if (headers.get("Authorization") === `Bearer ${config.publishableKey}`) {
+            headers.delete("Authorization");
+          }
           return fetch(input, { ...init, headers });
         }
       }
@@ -183,6 +196,92 @@
     renderEvents();
   }
 
+  function showWaitingEmpty(message) {
+    waitingList.replaceChildren();
+    addText(waitingList, "li", "empty", message);
+  }
+
+  async function loadWaitingEvents() {
+    if (!supabaseClient || !moderatorUser) return;
+    moderatorStatus.textContent = "Loading posts for review…";
+    const { data, error } = await supabaseClient
+      .from("events")
+      .select(reviewColumns)
+      .eq("status", "waiting")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Could not load posts for review", error);
+      moderatorStatus.textContent = "Waiting posts could not be loaded. Check the database permissions and refresh.";
+      showWaitingEmpty("There was a problem loading posts for review.");
+      return;
+    }
+
+    const waitingEvents = data || [];
+    moderatorStatus.textContent = waitingEvents.length === 1
+      ? "1 post waiting for review."
+      : `${waitingEvents.length} posts waiting for review.`;
+    if (!waitingEvents.length) {
+      showWaitingEmpty("No posts are waiting for review.");
+      return;
+    }
+
+    waitingList.replaceChildren(...waitingEvents.map((event) => {
+      const item = renderEvent(event);
+      const review = addText(item, "div", "review", "");
+      const reasons = [event.status_reason, event.note_for_moderator].filter((reason) => reason && reason.trim());
+      addText(review, "p", "why", reasons.join(" · ") || "This post needs moderator review.");
+      addText(review, "p", "original", event.announcement || "Original announcement unavailable.");
+      const actions = addText(review, "p", "actions", "");
+      const approve = addText(actions, "button", "", "Approve");
+      approve.type = "button";
+      approve.addEventListener("click", () => reviewPost(event.id, "published"));
+      const reject = addText(actions, "button", "ghost", "Reject");
+      reject.type = "button";
+      reject.addEventListener("click", () => reviewPost(event.id, "rejected"));
+      item.querySelector(".event-body").appendChild(review);
+      return item;
+    }));
+  }
+
+  async function reviewPost(id, status) {
+    if (!supabaseClient || !moderatorUser) return;
+    const action = status === "published" ? "Approving" : "Rejecting";
+    moderatorStatus.textContent = `${action} post…`;
+    const { error } = await supabaseClient
+      .from("events")
+      .update({
+        status,
+        status_reason: status === "rejected" ? "Rejected by moderator." : "",
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: moderatorUser.id
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Could not update the reviewed post", error);
+      moderatorStatus.textContent = `The post could not be ${status === "published" ? "approved" : "rejected"}. Check the database permissions and try again.`;
+      return;
+    }
+
+    moderatorStatus.textContent = status === "published" ? "Post approved and published." : "Post rejected.";
+    await Promise.all([loadWaitingEvents(), loadEvents()]);
+  }
+
+  function syncModeratorSession(user) {
+    moderatorUser = user || null;
+    moderatorLoginForm.hidden = Boolean(moderatorUser);
+    moderatorSession.hidden = !moderatorUser;
+    if (moderatorUser) {
+      moderatorWelcome.textContent = "Signed in as moderator.";
+      loadWaitingEvents();
+    } else {
+      moderatorWelcome.textContent = "";
+      moderatorStatus.textContent = "";
+      showWaitingEmpty("Sign in to review waiting posts.");
+    }
+  }
+
   function displayResult(status, message, reasons) {
     const labels = {
       published: "Published",
@@ -276,5 +375,40 @@
     });
   }
 
-  if (supabaseClient) loadEvents();
+  moderatorLoginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!supabaseClient) {
+      moderatorStatus.textContent = "The website connection is not configured yet.";
+      return;
+    }
+    moderatorLoginButton.disabled = true;
+    moderatorLoginButton.textContent = "Signing in…";
+    moderatorStatus.textContent = "";
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email: moderatorEmail.value.trim(),
+      password: moderatorPassword.value
+    });
+    moderatorLoginButton.disabled = false;
+    moderatorLoginButton.textContent = "Sign in";
+    if (error) {
+      moderatorStatus.textContent = error.message || "Sign-in failed. Check the email and password.";
+      return;
+    }
+    moderatorPassword.value = "";
+  });
+
+  moderatorSignout.addEventListener("click", async () => {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      moderatorStatus.textContent = error.message || "Sign-out failed. Please try again.";
+    }
+  });
+
+  if (supabaseClient) {
+    loadEvents();
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => syncModeratorSession(session && session.user), 0);
+    });
+  }
 })();
