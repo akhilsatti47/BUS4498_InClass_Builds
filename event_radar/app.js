@@ -367,9 +367,9 @@
   refreshButton.addEventListener("click", loadEvents);
   for (const button of filterButtons) {
     button.addEventListener("click", () => {
-      activeFilter = button.dataset.filter === "food" ? "food" : "all";
+      activeFilter = activeFilter === "food" ? "all" : "food";
       for (const filterButton of filterButtons) {
-        filterButton.setAttribute("aria-pressed", String(filterButton === button));
+        filterButton.setAttribute("aria-pressed", String(activeFilter === "food"));
       }
       renderEvents();
     });
