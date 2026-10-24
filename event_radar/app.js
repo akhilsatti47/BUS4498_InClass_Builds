@@ -15,7 +15,7 @@
   const eventList = document.getElementById("event-list");
   const boardStatus = document.getElementById("board-status");
   const refreshButton = document.getElementById("refresh-button");
-  const filterButtons = Array.from(document.querySelectorAll("[data-filter]"));
+  const foodFilter = document.getElementById("food-filter");
   const moderatorLoginForm = document.getElementById("moderator-login-form");
   const moderatorEmail = document.getElementById("moderator-email");
   const moderatorPassword = document.getElementById("moderator-password");
@@ -365,15 +365,11 @@
   });
 
   refreshButton.addEventListener("click", loadEvents);
-  for (const button of filterButtons) {
-    button.addEventListener("click", () => {
-      activeFilter = button.dataset.filter === "food" ? "food" : "all";
-      for (const filterButton of filterButtons) {
-        filterButton.setAttribute("aria-pressed", String(filterButton === button));
-      }
-      renderEvents();
-    });
-  }
+  foodFilter.addEventListener("click", () => {
+    activeFilter = activeFilter === "food" ? "all" : "food";
+    foodFilter.setAttribute("aria-pressed", String(activeFilter === "food"));
+    renderEvents();
+  });
 
   moderatorLoginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
