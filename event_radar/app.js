@@ -292,7 +292,12 @@
           approve.type = reject.type = "button";
           function decideThen(status) {
             var lesson = teachInput.value.trim();
-            if (lesson) { saveLesson(lesson, ev.id).then(function () { review(ev, status); }); return; }
+            if (lesson) {
+              saveLesson(lesson, ev.id).then(function (saved) {
+                if (saved) review(ev, status);
+              });
+              return;
+            }
             review(ev, status);
           }
           approve.addEventListener("click", function () { decideThen("published"); });
@@ -338,11 +343,19 @@
 
   /* ---------- lessons: what moderators teach the agent ---------- */
   function saveLesson(text, fromPost) {
-    return db.from("lessons").insert({ lesson: text.slice(0, 300), created_by: session.user.email, from_post: fromPost || null })
+    var lesson = text.trim().slice(0, 300);
+    if (lesson.length < 5) {
+      $("teachMsg").textContent = "A lesson must be at least 5 characters long.";
+      if (fromPost) $("waitingStatus").textContent = "The lesson wasn't saved, so the post decision wasn't applied. Write at least 5 characters and try again.";
+      return Promise.resolve(false);
+    }
+    return db.from("lessons").insert({ lesson: lesson, created_by: session.user.email, from_post: fromPost || null })
       .then(function (res) {
         $("teachMsg").textContent = res.error ? "Couldn't save the lesson: " + res.error.message : "Saved. The agent reads it with the next post.";
+        if (res.error && fromPost) $("waitingStatus").textContent = "The lesson wasn't saved, so the post decision wasn't applied: " + res.error.message;
         if (!res.error) toast("Lesson saved");
         loadLessons();
+        return !res.error;
       });
   }
   function loadLessons() {
@@ -383,7 +396,7 @@
     e.preventDefault();
     var text = $("lessonText").value.trim();
     if (!text) return;
-    saveLesson(text, null).then(function () { $("lessonText").value = ""; });
+    saveLesson(text, null).then(function (saved) { if (saved) $("lessonText").value = ""; });
   });
 
   loadBoard(false);
