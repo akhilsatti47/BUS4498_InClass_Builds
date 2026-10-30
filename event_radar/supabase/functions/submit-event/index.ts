@@ -172,6 +172,10 @@ type SubmissionInput = {
   announcement: string | null;
   flyer: File | null;
   flyerError: string | null;
+  source: string;
+  sourceId: string;
+  sourceName: string;
+  thread: string;
 };
 
 async function readSubmission(req: Request): Promise<SubmissionInput> {
@@ -183,6 +187,11 @@ async function readSubmission(req: Request): Promise<SubmissionInput> {
         announcement: typeof body?.announcement === "string" ? body.announcement : null,
         flyer: null,
         flyerError: null,
+        source: typeof body?.source === "string" ? body.source.trim().slice(0, 40) : "",
+        sourceId: typeof body?.source_id === "string" ? body.source_id.trim().slice(0, 200) : "",
+        sourceName: typeof body?.source_name === "string" ? body.source_name.trim().slice(0, 200) : "",
+        // Stage 12 uses this context. Stage 14 passes it through; earlier agent stages ignore it.
+        thread: typeof body?.thread === "string" ? body.thread.slice(0, 5000) : "",
       };
     }
     if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
@@ -195,12 +204,16 @@ async function readSubmission(req: Request): Promise<SubmissionInput> {
         announcement: typeof announcement === "string" ? announcement : null,
         flyer,
         flyerError: invalidFlyerValue ? "Choose a JPG or PNG flyer file." : null,
+        source: "",
+        sourceId: "",
+        sourceName: "",
+        thread: "",
       };
     }
   } catch {
-    return { announcement: null, flyer: null, flyerError: null };
+    return { announcement: null, flyer: null, flyerError: null, source: "", sourceId: "", sourceName: "", thread: "" };
   }
-  return { announcement: null, flyer: null, flyerError: null };
+  return { announcement: null, flyer: null, flyerError: null, source: "", sourceId: "", sourceName: "", thread: "" };
 }
 
 function flyerTypeError(file: File): string | null {
@@ -332,8 +345,34 @@ async function handlePost(req: Request): Promise<Response> {
 
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
   const supabase = getAdminClient();
-  if (!anthropicKey || !supabase) {
-    return jsonResponse({ ok: false, message: "The event agent is missing a required key or connection setting." }, 503);
+  if (!supabase) return jsonResponse({ ok: false, message: "The event agent is missing its Supabase connection settings." }, 503);
+
+  // Chat readers may retry a message after a timeout. Check its source ID before
+  // any other database lookup or AI call so a retry cannot create a second decision.
+  if (submission.source && submission.sourceId) {
+    const { data: alreadyProcessed, error: duplicateCheckError } = await supabase
+      .from("events")
+      .select("id")
+      .eq("source", submission.source)
+      .eq("source_id", submission.sourceId)
+      .maybeSingle();
+    if (duplicateCheckError) {
+      console.error("Could not check whether the chat message was already processed", duplicateCheckError);
+      return jsonResponse({ ok: false, message: "The event agent could not check whether this message was already processed." }, 500);
+    }
+    if (alreadyProcessed) {
+      return jsonResponse({
+        ok: true,
+        status: "duplicate",
+        already_read: true,
+        message: "This chat message was already processed.",
+        reasons: [],
+      });
+    }
+  }
+
+  if (!anthropicKey) {
+    return jsonResponse({ ok: false, message: "The event agent is missing its AI key." }, 503);
   }
 
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -411,6 +450,9 @@ async function handlePost(req: Request): Promise<Response> {
     dedupe_key: dedupeKey,
     ai_model: MODEL,
     flyer_url: "",
+    ...(submission.source && submission.sourceId
+      ? { source: submission.source, source_id: submission.sourceId, source_name: submission.sourceName }
+      : {}),
   };
 
   const { data: event, error: insertError } = await supabase
@@ -420,11 +462,22 @@ async function handlePost(req: Request): Promise<Response> {
     .single();
 
   if (insertError?.code === "23505") {
+    let alreadyRead = false;
+    if (submission.source && submission.sourceId) {
+      const { data: existingMessage } = await supabase
+        .from("events")
+        .select("id")
+        .eq("source", submission.source)
+        .eq("source_id", submission.sourceId)
+        .maybeSingle();
+      alreadyRead = Boolean(existingMessage);
+    }
     return jsonResponse({
       ok: true,
       status: "duplicate",
-      message: "This event is already posted.",
-      reasons: ["A post with the same date, start time, and place is already active."],
+      already_read: alreadyRead,
+      message: alreadyRead ? "This chat message was already processed." : "This event is already posted.",
+      reasons: alreadyRead ? [] : ["A post with the same date, start time, and place is already active."],
     });
   }
   if (insertError || !event) {
